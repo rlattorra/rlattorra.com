@@ -1,10 +1,8 @@
 on:
   push:
-    branches-ignore:
-      - main
+    branches: ["*"]
   pull_request:
-    branches:
-      - main
+    branches: ["*"]
 
 name: FTP Deploy and Push
 
