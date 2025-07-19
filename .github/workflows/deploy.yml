@@ -1,0 +1,44 @@
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches:
+      - main
+
+name: FTP Deploy and Push
+
+jobs:
+  web-deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get latest code
+        uses: actions/checkout@v4
+
+      - name: Set deployment path
+        id: path
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "dir=/public_html/preview.rlattorra.com/" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "dir=/public_html/rlattorra.com/" >> $GITHUB_OUTPUT
+          else
+            branch_name=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+            echo "dir=/public_html/canary.rlattorra.com/${branch_name}/" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sync files
+        uses: SamKirkland/FTP-Deploy-Action@4.3.2
+        with:                                        
+          server: ${{ secrets.FTP_SERVER }}     
+          username: ${{ secrets.FTP_USERNAME }} 
+          password: ${{ secrets.FTP_PASSWORD }} 
+          local-dir: ./
+          server-dir: ${{ steps.path.outputs.dir }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/LICENSE.md
+            **/README.md
